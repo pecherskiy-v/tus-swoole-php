@@ -13,11 +13,19 @@ class Request
     /**
      * Request constructor.
      */
-    public function __construct()
+    public function __construct(HttpRequest $request = null)
     {
+        if ($request !== null) {
+            $this->request = $request;
+        }
         if (null === $this->request) {
             $this->request = HttpRequest::createFromGlobals();
         }
+    }
+
+    public static function makeByRequest(HttpRequest $request)
+    {
+        return new self($request);
     }
 
     /**

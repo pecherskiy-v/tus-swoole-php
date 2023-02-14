@@ -90,6 +90,11 @@ class Server extends AbstractTus
         $this->setCache($cacheAdapter);
     }
 
+    public function setRequest(HttpRequest $request)
+    {
+        $this->request = new Request($request);
+    }
+
     /**
      * Set upload dir.
      *
