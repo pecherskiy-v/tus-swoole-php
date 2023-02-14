@@ -72,6 +72,7 @@ class Server extends AbstractTus
      *          Default 0, no restriction.
      */
     protected $maxUploadSize = 0;
+    private $sourceContent;
 
     /**
      * TusServer constructor.
@@ -80,12 +81,14 @@ class Server extends AbstractTus
      *
      * @throws \ReflectionException
      */
-    public function __construct($cacheAdapter = 'file')
+    public function __construct($cacheAdapter = 'file', $sourceContent = false)
     {
         $this->request    = new Request();
         $this->response   = new Response();
         $this->middleware = new Middleware();
         $this->uploadDir  = \dirname(__DIR__, 2) . '/' . 'uploads';
+
+        $this->sourceContent = $sourceContent;
 
         $this->setCache($cacheAdapter);
     }
@@ -471,12 +474,18 @@ class Server extends AbstractTus
         }
 
         $file     = $this->buildFile($meta)->setUploadMetadata($meta['metadata'] ?? []);
-        $file->setFileContent($this->request->getRequest()->getContent());
+        if ($this->sourceContent) {
+            $file->setFileContent($this->request->getRequest()->getContent());
+        }
         $checksum = $meta['checksum'];
 
         try {
             $fileSize = $file->getFileSize();
-            $offset   = $file->setKey($uploadKey)->setChecksum($checksum)->upload($fileSize);
+            if ($this->sourceContent) {
+                $offset = $file->setKey($uploadKey)->setChecksum($checksum)->uploadByContent($fileSize);
+            } else {
+                $offset = $file->setKey($uploadKey)->setChecksum($checksum)->upload($fileSize);
+            }
 
             // If upload is done, verify checksum.
             if ($offset === $fileSize) {

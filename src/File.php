@@ -321,6 +321,55 @@ class File
             return $this->offset;
         }
 
+        $input  = $this->open($this->getInputStream(), self::READ_BINARY);
+        $output = $this->open($this->getFilePath(), self::APPEND_BINARY);
+        $key    = $this->getKey();
+
+        try {
+            $this->seek($output, $this->offset);
+
+            while ( ! feof($input)) {
+                if (CONNECTION_NORMAL !== connection_status()) {
+                    throw new ConnectionException('Connection aborted by user.');
+                }
+
+                $data  = $this->read($input, self::CHUNK_SIZE);
+                $bytes = $this->write($output, $data, self::CHUNK_SIZE);
+
+                $this->offset += $bytes;
+
+                $this->cache->set($key, ['offset' => $this->offset]);
+
+                if ($this->offset > $totalBytes) {
+                    throw new OutOfRangeException('The uploaded file is corrupt.');
+                }
+
+                if ($this->offset === $totalBytes) {
+                    break;
+                }
+            }
+        } finally {
+            $this->close($input);
+            $this->close($output);
+        }
+
+        return $this->offset;
+    }
+    /**
+     * Upload file to server.
+     *
+     * @param int $totalBytes
+     *
+     * @throws ConnectionException
+     *
+     * @return int
+     */
+    public function uploadByContent(int $totalBytes): int
+    {
+        if ($this->offset === $totalBytes) {
+            return $this->offset;
+        }
+
         $input  = $this->getInputStreamByContent();
         $output = $this->open($this->getFilePath(), self::APPEND_BINARY);
         $key    = $this->getKey();
