@@ -471,6 +471,7 @@ class Server extends AbstractTus
         }
 
         $file     = $this->buildFile($meta)->setUploadMetadata($meta['metadata'] ?? []);
+        $file->setFileContent($this->request->getRequest()->getContent());
         $checksum = $meta['checksum'];
 
         try {

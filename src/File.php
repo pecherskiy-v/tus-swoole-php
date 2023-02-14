@@ -51,6 +51,7 @@ class File
 
     /** @var string[] */
     private $uploadMetadata = [];
+    private $content;
 
     /**
      * File constructor.
@@ -274,6 +275,15 @@ class File
         return self::INPUT_STREAM;
     }
 
+    public function getInputStreamByContent()
+    {
+        $input = fopen('php://memory', 'r+');
+        fwrite($input, $this->content);
+        rewind($input);
+
+        return $input;
+    }
+
     /**
      * Get file meta.
      *
@@ -311,7 +321,7 @@ class File
             return $this->offset;
         }
 
-        $input  = $this->open($this->getInputStream(), self::READ_BINARY);
+        $input  = $this->getInputStreamByContent();
         $output = $this->open($this->getFilePath(), self::APPEND_BINARY);
         $key    = $this->getKey();
 
@@ -564,5 +574,10 @@ class File
     public function close($handle): bool
     {
         return fclose($handle);
+    }
+
+    public function setFileContent(string $content)
+    {
+        $this->content = $content;
     }
 }
